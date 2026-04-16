@@ -12,12 +12,9 @@ export default defineConfig(() => {
       },
     },
     server: {
-      port: 3000,
+      port: 3001,
       host: '0.0.0.0',
       hmr: process.env.DISABLE_HMR !== 'true',
-      proxy: {
-        '/api': 'http://localhost:8788',
-      },
     },
   };
 });

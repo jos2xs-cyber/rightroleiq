@@ -406,12 +406,17 @@ Do NOT include this analysis in your response. Begin your response immediately w
                                 <button
                                   key={tab.id}
                                   onClick={() => setActiveTab(tab.id)}
-                                  className={`flex items-center gap-2 px-4 py-3 sm:py-5 text-sm font-bold transition-all whitespace-nowrap sm:border-b-2 sm:flex-1 justify-center sm:rounded-none rounded-lg w-full sm:w-auto mb-1 sm:mb-0
-                                      ${isActive ? 'text-[#1a2744] sm:border-[#00bfa5] bg-white sm:bg-transparent shadow-sm sm:shadow-none translate-y-[-1px] sm:translate-y-0' : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-100'}
+                                  className={`group flex items-center gap-2 px-4 py-3 sm:py-5 text-sm font-bold transition-all duration-150 whitespace-nowrap sm:border-b-2 sm:flex-1 justify-center sm:rounded-none rounded-lg w-full sm:w-auto mb-1 sm:mb-0 cursor-pointer
+                                      ${isActive
+                                        ? 'text-[#1a2744] sm:border-[#00bfa5] bg-white sm:bg-transparent shadow-sm sm:shadow-none'
+                                        : 'text-slate-500 border-transparent hover:text-[#1a2744] hover:bg-white hover:shadow-sm sm:hover:border-slate-300 hover:scale-[1.02]'}
                                   `}
                                 >
-                                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#00bfa5]' : 'opacity-70'}`} />
-                                   {tab.label}
+                                   <Icon className={`w-4 h-4 transition-colors duration-150 ${isActive ? 'text-[#00bfa5]' : 'text-slate-400 group-hover:text-[#00bfa5]'}`} />
+                                   <span className={`transition-colors duration-150 ${isActive ? '' : 'group-hover:text-[#1a2744]'}`}>{tab.label}</span>
+                                   {!isActive && (
+                                     <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-[#00bfa5] opacity-0 group-hover:opacity-100 transition-opacity duration-150 ml-0.5" />
+                                   )}
                                 </button>
                             )
                         })}
