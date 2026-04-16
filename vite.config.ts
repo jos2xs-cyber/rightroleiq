@@ -16,7 +16,7 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
-        '/api': 'http://localhost:8787',
+        '/api': 'http://localhost:8788',
       },
     },
   };
