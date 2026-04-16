@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Groq from 'groq-sdk';
 import { Download, CheckCircle, ArrowRight, Loader2, FileText, Briefcase, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -256,17 +255,8 @@ export default function App() {
       setResults(null);
       setErrorMsg('');
       setActiveTab(1);
-      
-      if (!import.meta.env.VITE_GROQ_API_KEY) {
-          setErrorMsg('API key is missing. Add VITE_GROQ_API_KEY to your .env file and restart the dev server.');
-          console.error('[JobFit] VITE_GROQ_API_KEY is not set. Check your .env file.');
-          setLoading(false);
-          return;
-      }
 
-      try {
-          const groq = new Groq({ apiKey: import.meta.env.VITE_GROQ_API_KEY, dangerouslyAllowBrowser: true });
-          const prompt = `INSTRUCTIONS:
+      const prompt = `INSTRUCTIONS:
 - Preserve the resume's existing structure, section order, and layout
 - Rewrite wording for clarity, professionalism, and ATS keyword alignment
 - Where a JD keyword is already contextually present in the resume, use the exact keyword phrasing from the JD in the rewritten bullet
@@ -290,38 +280,27 @@ STEP 1 — SKILL GAP ANALYSIS (perform this reasoning silently before generating
 Do NOT include this analysis in your response. Begin your response immediately with [OUTPUT 1: OPTIMIZED RESUME] and no other text.
 ---
 `;
-          const response = await groq.chat.completions.create({
-              model: "llama-3.3-70b-versatile",
-              messages: [
-                  { role: "system", content: SYSTEM_INSTRUCTION },
-                  { role: "user", content: prompt },
-              ],
-              temperature: 0.1,
-              top_p: 0.9,
-              max_tokens: 8192,
-              seed: 42,
+
+      try {
+          const res = await fetch('/api/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ systemInstruction: SYSTEM_INSTRUCTION, prompt }),
           });
-          const text = response.choices[0]?.message?.content;
-          if (text) {
-              setResults(text);
-          } else {
-              setErrorMsg('No text generated. Please try again.');
+
+          if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: 'Request failed' })) as { error?: string; status?: number };
+              if (err.status === 401 || err.status === 403) setErrorMsg('Server API key invalid. Check Cloudflare secret.');
+              else if (err.status === 429) setErrorMsg('Rate limit reached. Please wait a moment and try again.');
+              else setErrorMsg(err.error || 'Something went wrong. Please try again.');
+              return;
           }
+
+          const { text } = await res.json() as { text: string };
+          if (text) setResults(text);
+          else setErrorMsg('No text generated. Please try again.');
       } catch (e: any) {
-          const status = e?.status ?? e?.statusCode;
-          if (status === 401 || status === 403) {
-              console.error('[JobFit] Authentication failed — check that GROQ_API_KEY is valid.');
-              setErrorMsg('Invalid API key. Check that GROQ_API_KEY in your .env file is correct.');
-          } else if (status === 429) {
-              console.error('[JobFit] Rate limit hit — too many requests.');
-              setErrorMsg('Rate limit reached. Please wait a moment and try again.');
-          } else if (e?.name === 'TypeError' || e?.message?.includes('fetch')) {
-              console.error('[JobFit] Network error — could not reach the Groq API.');
-              setErrorMsg('Network error. Check your internet connection and try again.');
-          } else {
-              console.error('[JobFit] Unexpected error:', e);
-              setErrorMsg(e?.message || 'Something went wrong. Please try again.');
-          }
+          setErrorMsg('Network error. Check your connection and try again.');
       } finally {
           setLoading(false);
       }
