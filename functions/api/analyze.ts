@@ -13,14 +13,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     const groq = new Groq({ apiKey: env.GROQ_API_KEY });
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       messages: [
         { role: 'system', content: systemInstruction },
         { role: 'user', content: prompt },
       ],
       temperature: 0.1,
       top_p: 0.9,
-      max_tokens: 8192,
+      max_tokens: 4096,
       seed: 42,
     });
 
