@@ -359,6 +359,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [aiProvider, setAiProvider] = useState<'groq' | 'google' | null>(null);
 
   useEffect(() => {
     if (!loading) return;
@@ -435,15 +436,20 @@ Do NOT include this analysis in your response. Begin your response immediately w
 
           if (!res.ok) {
               const err = await res.json().catch(() => ({ error: 'Request failed' })) as { error?: string; status?: number };
-              if (err.status === 401 || err.status === 403) setErrorMsg('Server API key invalid. Check Cloudflare secret.');
-              else if (err.status === 429) setErrorMsg('Rate limit reached. Please wait a moment and try again.');
-              else setErrorMsg(err.error || 'Something went wrong. Please try again.');
+              if (err.status === 429) {
+                setErrorMsg('Our free AI service is temporarily at capacity. Please try again in a few minutes. This is a free tool with limited daily usage — thank you for your patience!');
+              } else if (err.status === 401 || err.status === 403) {
+                setErrorMsg('Server API key invalid. Check Cloudflare secret.');
+              } else {
+                setErrorMsg(err.error || 'Something went wrong. Please try again.');
+              }
               return;
           }
 
-          const { text } = await res.json() as { text: string };
+          const { text, provider } = await res.json() as { text: string; provider?: 'groq' | 'google' };
           if (text) {
               setResults(text);
+              setAiProvider(provider ?? null);
               setStep('results');
           } else {
               setErrorMsg('No text generated. Please try again.');
@@ -494,8 +500,18 @@ Do NOT include this analysis in your response. Begin your response immediately w
               <span className="text-[11px] text-slate-400 font-medium tracking-widest uppercase">Know your fit. Close the gaps. Get the role.</span>
             </div>
           </div>
-          <div className="text-xs text-slate-400 font-medium tracking-wide hidden sm:block">
-            AI-Powered Resume Intelligence
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-medium tracking-wide">AI-Powered Resume Intelligence</span>
+            {aiProvider && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${
+                aiProvider === 'groq'
+                  ? 'bg-[#00bfa5]/10 text-[#00bfa5] border-[#00bfa5]/30'
+                  : 'bg-amber-400/10 text-amber-400 border-amber-400/30'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${aiProvider === 'groq' ? 'bg-[#00bfa5]' : 'bg-amber-400'}`} />
+                {aiProvider === 'groq' ? 'Primary' : 'Secondary'}
+              </span>
+            )}
           </div>
         </div>
       </header>
@@ -632,6 +648,12 @@ Do NOT include this analysis in your response. Begin your response immediately w
                 <div className="mb-4">
                   <label className="text-lg font-bold text-[#1a2744] block mb-1">Paste your current resume</label>
                   <p className="text-sm text-slate-400">Plain text works best. We'll handle formatting.</p>
+                </div>
+                <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+                  <span className="text-amber-500 text-base leading-none mt-0.5">🔒</span>
+                  <p className="text-sm text-amber-800 leading-relaxed">
+                    <span className="font-semibold">Privacy tip:</span> Consider removing your full name, address, phone number, and email before pasting — the analysis only needs your experience, skills, and education.
+                  </p>
                 </div>
                 <textarea
                   value={resume}
